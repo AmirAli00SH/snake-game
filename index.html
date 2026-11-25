@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Snake Game</title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            margin: 0;
+
+            min-height: 100vh;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            background: #0b1220;
+
+            color: white;
+
+            font-family: Arial, sans-serif;
+
+        }
+
+
+        .game {
+
+            width: 360px;
+
+            max-width: 95vw;
+
+            text-align: center;
+
+        }
+
+
+        h1 {
+
+            margin: 0 0 10px;
+
+        }
+
+
+        .score {
+
+            margin-bottom: 12px;
+
+            color: #94a3b8;
+
+            font-size: 16px;
+
+        }
+
+
+        .score span {
+
+            color: white;
+
+            font-weight: bold;
+
+        }
+
+
+        #bestScore {
+
+            color: #facc15;
+
+        }
+
+
+        canvas {
+
+            width: 320px;
+
+            height: 320px;
+
+            max-width: 100%;
+
+            display: block;
+
+            margin: auto;
+
+            background: #071025;
+
+            border: 2px solid #26354d;
+
+            border-radius: 10px;
+
+        }
+
+
+        .buttons {
+
+            display: flex;
+
+            justify-content: center;
+
+            gap: 10px;
+
+            margin-top: 15px;
+
+        }
+
+
+        button {
+
+            border: none;
+
+            padding: 10px 18px;
+
+            border-radius: 8px;
+
+            background: #172235;
+
+            color: white;
+
+            font-size: 15px;
+
+            cursor: pointer;
+
+        }
+
+
+        button:hover {
+
+            background: #263750;
+
+        }
+
+
+        .hint {
+
+            margin-top: 12px;
+
+            color: #64748b;
+
+            font-size: 13px;
+
+        }
+
+
+        .record {
+
+            height: 22px;
+
+            margin-top: 8px;
+
+            color: #facc15;
+
+            font-weight: bold;
+
+            font-size: 14px;
+
+        }
+        .copy {
+            margin-top: 12px;
+
+            color: #64748b;
+
+            font-size: 13px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<div class="game">
+
+
+    <h1>🐍 Snake Holder</h1>
+
+
+    <div class="score">
+
+        Score:
+
+        <span id="score">0</span>
+
+        &nbsp; | &nbsp;
+
+        Best Score:
+
+        <span id="bestScore">0</span>
+
+    </div>
+
+
+    <div
+        class="record"
+        id="record">
+    </div>
+
+
+    <canvas
+        id="game"
+        width="320"
+        height="320">
+    </canvas>
+
+
+    <div class="buttons">
+
+        <button id="pause">
+            Pause
+        </button>
+
+
+        <button id="restart">
+            Restart
+        </button>
+
+    </div>
+
+
+    <div class="hint">
+
+        Arrow Keys / WASD
+
+    </div>
+
+
+    <div class="copy">
+        Powered By AmirAli_SH
+    </div>
+
+
+</div>
+
+
+
+<script>
+
+
+// =================================
+// Canvas
+// =================================
+
+const canvas =
+    document.getElementById("game");
+
+const ctx =
+    canvas.getContext("2d");
+
+
+// =================================
+// HTML Elements
+// =================================
+
+const scoreText =
+    document.getElementById("score");
+
+const bestScoreText =
+    document.getElementById("bestScore");
+
+const recordText =
+    document.getElementById("record");
+
+const pauseButton =
+    document.getElementById("pause");
+
+const restartButton =
+    document.getElementById("restart");
+
+
+// =================================
+// Game Settings
+// =================================
+
+const tileSize = 20;
+
+const tileCount =
+    canvas.width / tileSize;
+
+
+// سرعت بازی
+// عدد کمتر = سرعت بیشتر
+
+const speed = 100;
+
+
+// =================================
+// Game Variables
+// =================================
+
+let snake;
+
+let food;
+
+let direction;
+
+let nextDirection;
+
+let score;
+
+let gameRunning;
+
+let gameTimer;
+
+
+// =================================
+// Best Score
+// =================================
+
+// گرفتن رکورد ذخیره شده
+// از حافظه مرورگر
+
+let bestScore =
+    Number(
+        localStorage.getItem("snakeBestScore")
+    ) || 0;
+
+
+// نمایش رکورد
+
+bestScoreText.textContent =
+    bestScore;
+
+
+// =================================
+// Reset Game
+// =================================
+
+function resetGame() {
+
+
+    // مار اولیه
+
+    snake = [
+
+        { x: 8, y: 8 },
+
+        { x: 7, y: 8 },
+
+        { x: 6, y: 8 }
+
+    ];
+
+
+    // جهت اولیه
+
+    direction = {
+
+        x: 1,
+
+        y: 0
+
+    };
+
+
+    nextDirection = {
+
+        x: 1,
+
+        y: 0
+
+    };
+
+
+    // Score فعلی
+
+    score = 0;
+
+    scoreText.textContent = score;
+
+
+    // پاک کردن پیام رکورد
+
+    recordText.textContent = "";
+
+
+    // بازی فعال
+
+    gameRunning = true;
+
+
+    // متن دکمه
+
+    pauseButton.textContent =
+        "Pause";
+
+
+    // ساخت غذا
+
+    createFood();
+
+
+    // حذف تایمر قبلی
+
+    clearInterval(gameTimer);
+
+
+    // شروع بازی
+
+    gameTimer =
+        setInterval(
+            updateGame,
+            speed
+        );
+
+
+    // رسم بازی
+
+    drawGame();
+
+}
+
+
+// =================================
+// Update Game
+// =================================
+
+function updateGame() {
+
+
+    // اگر بازی Pause باشد
+    // کاری انجام نمی شود
+
+    if (!gameRunning) {
+
+        return;
+
+    }
+
+
+    // اعمال جهت جدید
+
+    direction =
+        nextDirection;
+
+
+    // گرفتن سر مار
+
+    const head =
+        snake[0];
+
+
+    // ساخت سر جدید
+
+    const newHead = {
+
+        x: head.x + direction.x,
+
+        y: head.y + direction.y
+
+    };
+
+
+    // =================================
+    // برخورد با دیوار
+    // =================================
+
+    if (
+
+        newHead.x < 0 ||
+
+        newHead.x >= tileCount ||
+
+        newHead.y < 0 ||
+
+        newHead.y >= tileCount
+
+    ) {
+
+
+        // باخت → شروع دوباره
+
+        resetGame();
+
+        return;
+
+    }
+
+
+    // =================================
+    // برخورد با خودش
+    // =================================
+
+    for (
+        let i = 0;
+        i < snake.length;
+        i++
+    ) {
+
+
+        if (
+
+            newHead.x === snake[i].x &&
+
+            newHead.y === snake[i].y
+
+        ) {
+
+
+            // باخت → شروع دوباره
+
+            resetGame();
+
+            return;
+
+        }
+
+    }
+
+
+    // =================================
+    // اضافه کردن سر
+    // =================================
+
+    snake.unshift(newHead);
+
+
+    // =================================
+    // خوردن غذا
+    // =================================
+
+    if (
+
+        newHead.x === food.x &&
+
+        newHead.y === food.y
+
+    ) {
+
+
+        // افزایش Score
+
+        score++;
+
+
+        scoreText.textContent =
+            score;
+
+
+        // =================================
+        // بررسی رکورد
+        // =================================
+
+        if (score > bestScore) {
+
+
+            // رکورد جدید
+
+            bestScore = score;
+
+
+            // نمایش رکورد جدید
+
+            bestScoreText.textContent =
+                bestScore;
+
+
+            // ذخیره در مرورگر
+
+            localStorage.setItem(
+
+                "snakeBestScore",
+
+                bestScore
+
+            );
+
+
+            // پیام رکورد
+
+            recordText.textContent =
+                "🏆 NEW RECORD!";
+
+        }
+
+
+        // ساخت غذای جدید
+
+        createFood();
+
+    }
+
+
+    else {
+
+
+        // اگر غذا نخورد
+        // دم مار حذف می شود
+
+        snake.pop();
+
+    }
+
+
+    // رسم بازی
+
+    drawGame();
+
+}
+
+
+// =================================
+// Draw Game
+// =================================
+
+function drawGame() {
+
+
+    // پاک کردن Canvas
+
+    ctx.fillStyle =
+        "#071025";
+
+    ctx.fillRect(
+
+        0,
+
+        0,
+
+        canvas.width,
+
+        canvas.height
+
+    );
+
+
+    // =================================
+    // Draw Food
+    // =================================
+
+    ctx.fillStyle =
+        "#ef4444";
+
+    ctx.fillRect(
+
+        food.x * tileSize,
+
+        food.y * tileSize,
+
+        tileSize - 1,
+
+        tileSize - 1
+
+    );
+
+
+    // =================================
+    // Draw Snake
+    // =================================
+
+    for (
+
+        let i = 0;
+
+        i < snake.length;
+
+        i++
+
+    ) {
+
+
+        // سر مار
+
+        if (i === 0) {
+
+            ctx.fillStyle =
+                "#22c55e";
+
+        }
+
+
+        // بدن مار
+
+        else {
+
+            ctx.fillStyle =
+                "#16a34a";
+
+        }
+
+
+        ctx.fillRect(
+
+            snake[i].x *tileSize,
+
+            snake[i].y * tileSize,
+
+            tileSize - 1,
+
+            tileSize - 1
+
+        );
+
+    }
+
+}
+
+
+// =================================
+// Create Food
+// =================================
+
+function createFood() {
+
+
+    let validPosition = false;
+
+
+    while (!validPosition) {
+
+
+        food = {
+
+            x: Math.floor(
+
+                Math.random() * tileCount
+
+            ),
+
+            y: Math.floor(
+
+                Math.random() * tileCount
+
+            )
+
+        };
+
+
+        validPosition = true;
+
+
+        // بررسی اینکه غذا
+        // روی بدن مار نباشد
+
+        for (let part of snake) {
+
+
+            if (
+
+                food.x === part.x &&
+
+                food.y === part.y
+
+            ) {
+
+
+                validPosition = false;
+
+                break;
+
+            }
+
+        }
+
+    }
+
+}
+
+
+// =================================
+// Change Direction
+// =================================
+
+function changeDirection(x, y) {
+
+
+    // جلوگیری از برگشت مستقیم
+
+    if (
+
+        x === -direction.x &&
+
+        y === -direction.y
+
+    ) {
+
+        return;
+
+    }
+
+
+    nextDirection = {
+
+        x: x,
+
+        y: y
+
+    };
+
+}
+
+
+// =================================
+// Keyboard Controls
+// =================================
+
+document.addEventListener(
+
+    "keydown",
+
+    function(event) {
+
+
+        const key =
+            event.key.toLowerCase();
+
+
+        // بالا
+
+        if (
+
+            key === "arrowup" ||
+
+            key === "w"
+
+        ) {
+
+
+            changeDirection(
+
+                0,
+
+                -1
+
+            );
+
+        }
+
+
+        // پایین
+
+        else if (
+
+            key === "arrowdown" ||
+
+            key === "s"
+
+        ) {
+
+
+            changeDirection(
+
+                0,
+
+                1
+
+            );
+
+        }
+
+
+        // چپ
+
+        else if (
+
+            key === "arrowleft" ||
+
+            key === "a"
+
+        ) {
+
+
+            changeDirection(
+
+                -1,
+
+                0
+
+            );
+
+        }
+
+
+        // راست
+
+        else if (
+
+            key === "arrowright" ||
+
+            key === "d"
+
+        ) {
+
+
+            changeDirection(
+
+                1,
+
+                0
+
+            );
+
+        }
+
+
+        // Space = Pause
+
+        else if (key === " ") {
+
+
+            togglePause();
+
+        }
+
+    }
+
+);
+
+
+// =================================
+// Pause / Continue
+// =================================
+
+function togglePause() {
+
+
+    gameRunning =
+        !gameRunning;
+
+
+    if (gameRunning) {
+
+
+        pauseButton.textContent =
+            "Pause";
+
+
+    }
+
+    else {
+
+
+        pauseButton.textContent =
+            "Continue";
+
+    }
+
+}
+
+
+// =================================
+// Pause Button
+// =================================
+
+pauseButton.addEventListener(
+
+    "click",
+
+    togglePause
+
+);
+
+
+// =================================
+// Restart Button
+// =================================
+
+restartButton.addEventListener(
+
+    "click",
+
+    resetGame
+
+);
+
+
+// =================================
+// Start Game
+// =================================
+
+resetGame();
+
+
+</script>
+
+
+</body>
+
+</html>
